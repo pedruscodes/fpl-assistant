@@ -58,27 +58,19 @@ Tout vient de l'API publique, sans connexion, avec trois limites :
 
 L'horizon est d'une seule journée : un transfert gratuit sera utilisé dès qu'il rapporte un peu, même si le garder pour la semaine suivante vaudrait mieux. Le gain affiché aide à trancher.
 
-## Pilote automatique
+## Régler ton équipe
 
-`fpl autopilot` règle ton équipe pour la prochaine journée : transferts, XI, capitaine et vice-capitaine, envoyés à la FPL avec `--apply` (sans, il simule). Connecté à ton compte, il lit ton équipe exacte : transferts gratuits, prix de revente, transferts déjà faits. Il prend au plus un -4 par journée (`--max-hits` pour changer) et ne joue jamais de chip.
+`fpl autopilot` règle ton équipe pour la prochaine journée : transferts, XI, capitaine et vice-capitaine, envoyés à la FPL avec `--apply` (sans, il simule). Connecté à ton compte, il lit ton équipe exacte : transferts gratuits, prix de revente, transferts déjà faits. Il prend au plus un -4 par journée (`--max-hits` pour changer) et ne joue jamais de chip ; un chip activé à la main sur le site est conservé.
 
-Mise en route, une fois, sur ta machine :
+À lancer à la main avant chaque deadline :
 
 ```bash
-fpl login          # suis les étapes affichées (fenêtre de navigation privée)
+fpl login                  # suis les étapes affichées (fenêtre de navigation privée)
 fpl pull && fpl autopilot  # simulation, pour vérifier
-fpl login --print  # 2e connexion, pour l'Action : affiche son jeton sans le garder ici
+fpl autopilot --apply      # envoie l'équipe à la FPL
 ```
 
-Dans le dépôt, Settings > Secrets and variables > Actions, colle ce jeton dans le secret `FPL_REFRESH_TOKEN` et ton ID d'équipe (affiché par `fpl login`) dans la variable `FPL_ENTRY`. Le jeton donne la main sur ton compte : ne le colle nulle part ailleurs. Avec la CLI GitHub, `gh secret set FPL_REFRESH_TOKEN --body "$(fpl login --print)"` évite même de l'afficher.
-
-L'Action a son propre jeton : ainsi les usages locaux et ceux de l'Action ne se gênent pas.
-
-La GitHub Action [Pilote automatique](.github/workflows/autopilot.yml) tourne ensuite plusieurs fois par jour (GitHub espace ses passages de 3 à 6 heures). Le premier passage des 6 h 30 avant chaque deadline vérifie la connexion, attend jusqu'à une heure avant, puis règle l'équipe une fois et publie le compte rendu dans une issue `autopilot`, ce qui t'envoie une notification. Si quelque chose échoue, elle ouvre une issue d'alerte. À chaque passage, elle vérifie aussi que la connexion tient (`fpl whoami`), pour qu'un jeton annulé se voie bien avant la deadline ; une simple panne de la FPL ne déclenche pas d'alerte. Après un nouveau `fpl login --print`, lance-la à la main depuis l'onglet Actions, sans « force », pour tester le jeton tout de suite. Un chip activé à la main sur le site est conservé ; le pilote n'en joue jamais lui-même.
-
-La FPL donne un nouveau jeton à chaque usage, et une Action ne peut pas réécrire ses secrets. Le pilote garde donc le dernier jeton d'un passage à l'autre dans le cache de l'Action, chiffré avec le secret `FPL_REFRESH_TOKEN` (les forks n'y ont pas accès). Le secret ne sert qu'au premier passage ; après un nouveau `fpl login --print`, le pilote repart du nouveau secret. La FPL annule tous les jetons d'une session de connexion dès que le site s'y reconnecte. Fais donc `fpl login` dans une fenêtre de navigation privée neuve, ferme-la aussitôt, et regarde ton équipe ailleurs (navigateur habituel, appli) : sinon, ta visite suivante sur le site coupe le pilote.
-
-Il faut refaire `fpl login --print` et remplacer le secret au bout de six mois (la FPL le demande), si l'Action reste arrêtée plus d'une semaine (GitHub vide alors son cache) ou si la FPL a annulé le jeton. La vérification de connexion ouvre une alerte dans ces cas-là.
+La FPL annule le jeton de connexion au bout de quelques heures : refais `fpl login` à chaque fois.
 
 Règlement : l'article 28 (d) des [conditions FPL](https://fantasy.premierleague.com/en/help/terms) interdit d'accéder au jeu par des systèmes automatisés, et l'article 36 prévoit suspension ou disqualification en cas de manquement.
 
@@ -88,4 +80,4 @@ Règlement : l'article 28 (d) des [conditions FPL](https://fantasy.premierleague
 2. ~~Modèle LightGBM qui bat la baseline~~ ; à enrichir : minutes attendues, xG/xA, statut médical
 3. ~~Optimiseur PuLP branché sur les prédictions de la prochaine journée~~ (`fpl recommend`)
 4. ~~Transferts depuis mon équipe actuelle, avec le coût des transferts (-4)~~ (`fpl transfers`) ; à faire : horizon de plusieurs journées
-5. ~~Pilote automatique avant chaque deadline~~ (`fpl autopilot`) ; à faire : chips, puis une interface
+5. ~~Équipe réglée en une commande~~ (`fpl autopilot`, lancé à la main avant chaque deadline) ; à faire : chips, puis une interface

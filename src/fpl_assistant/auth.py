@@ -104,7 +104,7 @@ def save_refresh_token(token: str, path: Path = TOKEN_FILE) -> None:
 
 
 def load_refresh_token(path: Path = TOKEN_FILE) -> str:
-    """Depuis le fichier écrit par `fpl login`, sinon `FPL_REFRESH_TOKEN` (GitHub Actions).
+    """Depuis le fichier écrit par `fpl login`, sinon la variable `FPL_REFRESH_TOKEN`.
 
     Le fichier passe en premier : après une rotation, c'est lui qui a le jeton valide.
     """
@@ -117,7 +117,7 @@ def load_refresh_token(path: Path = TOKEN_FILE) -> str:
 
 def access_token(path: Path = TOKEN_FILE) -> str:
     """Jeton d'accès frais. Si le serveur fait tourner le refresh token, le nouveau est
-    réécrit dans `path` (la GitHub Action le garde ensuite, chiffré, dans son cache)."""
+    réécrit dans `path`."""
     old = load_refresh_token(path)
     tokens = refresh(old)
     if tokens.get("refresh_token", old) != old:

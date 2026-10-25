@@ -42,9 +42,7 @@ def _report(label: str, test: pd.DataFrame, pred: pd.Series) -> None:
     )
 
 
-def _login(print_token: bool) -> None:
-    """Instructions sur stderr : avec `print_token`, seule la sortie standard porte le jeton,
-    à coller dans le secret GitHub FPL_REFRESH_TOKEN."""
+def _login() -> None:
 
     def say(text: str = "") -> None:
         print(text, file=sys.stderr)
@@ -66,12 +64,8 @@ def _login(print_token: bool) -> None:
     token = renewed.get("refresh_token", tokens["refresh_token"])
     entry = api.FPLClient(access_token=renewed["access_token"]).me()["player"]["entry"]
     say(f"\nConnecté : équipe {entry}.")
-    if print_token:
-        print(token)
-        say("Jeton affiché pour le secret GitHub, rien n'est gardé sur cette machine.")
-    else:
-        auth.save_refresh_token(token)
-        say(f"Jeton enregistré dans {auth.TOKEN_FILE}.")
+    auth.save_refresh_token(token)
+    say(f"Jeton enregistré dans {auth.TOKEN_FILE}.")
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -109,12 +103,7 @@ def main(argv: list[str] | None = None) -> None:
         help="Nombre maximum de transferts",
     )
 
-    p_login = sub.add_parser("login", help="Connecte le dépôt à ton compte FPL (une fois)")
-    p_login.add_argument(
-        "--print",
-        action="store_true",
-        help="Affiche le jeton (pour le secret GitHub) au lieu de l'enregistrer ici",
-    )
+    sub.add_parser("login", help="Connecte le dépôt à ton compte FPL")
     sub.add_parser("whoami", help="Vérifie la connexion au compte et affiche l'ID d'équipe")
     p_auto = sub.add_parser(
         "autopilot", help="Règle ton équipe pour la prochaine journée (connexion requise)"
@@ -161,7 +150,7 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.cmd == "login":
         try:
-            _login(args.print)
+            _login()
         except (RuntimeError, requests.RequestException) as exc:
             parser.exit(1, f"{exc}\n")
         return
