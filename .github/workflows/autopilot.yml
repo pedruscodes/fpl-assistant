@@ -86,6 +86,9 @@ jobs:
           secret: ${{ secrets.FPL_REFRESH_TOKEN }}
       - name: Connexion au compte
         id: whoami
+        # Un jeton refusé ouvre une seule issue d'alerte (ci-dessous) : le passage reste vert
+        # pour que GitHub n'envoie pas en plus un mail d'échec toutes les 3 à 6 heures.
+        continue-on-error: true
         run: fpl whoami 2>&1 | tee "$RUNNER_TEMP/whoami.log"
       - name: Garder le nouveau jeton
         id: save
@@ -96,7 +99,7 @@ jobs:
           secret: ${{ secrets.FPL_REFRESH_TOKEN }}
       - name: Alerte
         if: >-
-          failure() && (steps.restore.outcome == 'failure' || steps.whoami.outcome == 'failure'
+          !cancelled() && (steps.restore.outcome == 'failure' || steps.whoami.outcome == 'failure'
           || steps.save.outcome == 'failure')
         env:
           GH_TOKEN: ${{ github.token }}
@@ -105,7 +108,7 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           # La FPL renvoie souvent des 503 après les matchs : seul un jeton refusé demande de
-          # se reconnecter, le reste ne laisse que le passage en échec.
+          # se reconnecter, le reste ne laisse qu'un avertissement.
           if [ "$WHOAMI" = failure ] && [ "$SAVE" != failure ] &&
             ! grep -q invalid_grant "$RUNNER_TEMP/whoami.log"; then
             echo "::warning::Échec passager de la FPL, pas d'alerte."
