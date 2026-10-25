@@ -2,8 +2,7 @@ name: Pilote automatique
 
 # Regarde la prochaine deadline FPL à chaque passage. Une heure avant, règle l'équipe
 # (transferts, XI, capitaine, vice) une fois par journée et le signale dans une issue.
-# À chaque passage planifié, et avant d'attendre une deadline, vérifie aussi que la
-# connexion tient.
+# À chaque passage, et avant d'attendre une deadline, vérifie aussi que la connexion tient.
 # Il faut la variable FPL_ENTRY et le secret FPL_REFRESH_TOKEN (`fpl login --print`, cf.
 # README) ; sans FPL_ENTRY, rien ne tourne. La FPL change le jeton à chaque usage : le
 # dernier est gardé, chiffré, dans le cache (.github/actions/fpl-token).
@@ -59,14 +58,14 @@ jobs:
           FORCE: ${{ inputs.force }}
         run: .github/scripts/window.sh
 
-  # À chaque passage planifié, sauf s'il règle l'équipe tout de suite, et avant une longue
-  # attente : un jeton annulé se voit vite, et l'heure de la coupure aide à en trouver la cause.
+  # À chaque passage (planifié, ou à la main sans « force » pour tester un nouveau jeton), sauf
+  # s'il règle l'équipe tout de suite, et avant une longue attente : un jeton annulé se voit
+  # vite, et l'heure de la coupure aide à en trouver la cause.
   check:
     needs: window
     if: >-
       ${{ !cancelled() && vars.FPL_ENTRY != '' && github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'schedule' && needs.window.outputs.run != 'true') ||
-      needs.window.outputs.check == 'true') }}
+      (needs.window.outputs.run != 'true' || needs.window.outputs.check == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # Un usage du jeton à la fois : deux rafraîchissements simultanés se gêneraient.
